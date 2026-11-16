@@ -648,6 +648,12 @@ input[type=text]:focus { outline: none; border-color: #c9a84c; box-shadow: 0 0 0
 }
 .gun-area.disabled { cursor: default; opacity: 0.55; }
 
+/* Bring the shotgun and muzzle flash above player grids during firing */
+.gun-area.shot-animating {
+    z-index: 8;
+    opacity: 1;
+}
+
 .gun-status {
     font-size: 0.72rem;
     color: #8a9a8a;
@@ -994,8 +1000,8 @@ input[type=text]:focus { outline: none; border-color: #c9a84c; box-shadow: 0 0 0
     position: absolute;
     left: 0;
     top: 23px;
-    width: 135px;
-    height: 76px;
+    width: 200px;
+    height: 120px;
     opacity: 0;
     pointer-events: none;
     z-index: 20;
@@ -1006,42 +1012,78 @@ input[type=text]:focus { outline: none; border-color: #c9a84c; box-shadow: 0 0 0
     clip-path: polygon(
         100% 50%,
         0 0,
-        18% 50%,
+        22% 38%,
+        7% 50%,
+        22% 62%,
         0 100%
     );
 
-    background: radial-gradient(
-        ellipse at 85% 50%,
-        #ffffff 0%,
-        #fff8d0 15%,
-        #ffd04a 35%,
-        #ff7518 60%,
-        rgba(255,40,0,0) 100%
-    );
+    background:
+        radial-gradient(
+            ellipse at 90% 50%,
+            #ffffff 0%,
+            #ffffff 9%,
+            #fff5cf 20%,
+            #ffd04a 38%,
+            #ff7518 60%,
+            rgba(255,40,0,0) 100%
+        );
 
-    filter: drop-shadow(0 0 18px #ff9b24);
+    filter:
+        brightness(1.8)
+        drop-shadow(0 0 22px #ffffff)
+        drop-shadow(0 0 45px #ff9b24);
+}
+
+.muzzle-flash::before {
+    content: '';
+    position: absolute;
+    left: 20%;
+    top: 35%;
+    width: 80%;
+    height: 30%;
+    border-radius: 50%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,230,170,0.95),
+        #ffffff
+    );
+    filter: blur(5px);
 }
 
 .muzzle-flash.active {
-    animation: muzzleBlast 0.22s ease-out forwards;
+    animation: muzzleBlast 0.34s cubic-bezier(.16,.78,.3,1) forwards;
 }
 
 @keyframes muzzleBlast {
     0% {
-        opacity: 1;
-        transform: translate(-95%, -50%) scale(0.3);
-        filter: brightness(2.5) drop-shadow(0 0 35px #fff);
+        opacity: 0;
+        transform: translate(-95%, -50%) scale(0.18);
+        filter: brightness(3.5) drop-shadow(0 0 25px #fff);
     }
 
-    35% {
+    18% {
         opacity: 1;
-        transform: translate(-95%, -50%) scale(1.15);
-        filter: brightness(1.8) drop-shadow(0 0 45px #ffb52e);
+        transform: translate(-95%, -50%) scale(1.4);
+        filter:
+            brightness(3)
+            drop-shadow(0 0 35px #fff)
+            drop-shadow(0 0 65px #ffb52e);
+    }
+
+    55% {
+        opacity: 0.95;
+        transform: translate(-95%, -50%) scale(1.1);
+        filter:
+            brightness(2)
+            drop-shadow(0 0 28px #fff)
+            drop-shadow(0 0 50px #ff9b24);
     }
 
     100% {
         opacity: 0;
-        transform: translate(-95%, -50%) scale(0.65);
+        transform: translate(-95%, -50%) scale(0.7);
     }
 }
 
@@ -1907,9 +1949,12 @@ function playShotAnimation(onComplete, shouldDarken = true) {
         return;
     }
 
-    animating = true;
+	animating = true;
 
-    const shotgunEl = document.querySelector('.shotgun-display');
+	const gunArea = document.getElementById('gun-area');
+	gunArea.classList.add('shot-animating');
+
+	const shotgunEl = gunArea.querySelector('.shotgun-display');
     const darkOverlay = document.getElementById('shot-dark-overlay');
     const app = document.getElementById('app');
 
@@ -1954,7 +1999,7 @@ function playShotAnimation(onComplete, shouldDarken = true) {
     // End muzzle flash
     setTimeout(() => {
         if (muzzle) muzzle.classList.remove('active');
-    }, 230);
+    }, 380);
 
     // End shotgun recoil
     setTimeout(() => {
@@ -1974,13 +2019,15 @@ function playShotAnimation(onComplete, shouldDarken = true) {
     }
 
     // Complete shooting sequence
-    setTimeout(() => {
-        animating = false;
-        gunArmed = false;
-        aimTarget = null;
+	setTimeout(() => {
+		gunArea.classList.remove('shot-animating');
 
-        if (onComplete) onComplete();
-    }, 1100);
+		animating = false;
+		gunArmed = false;
+		aimTarget = null;
+
+		if (onComplete) onComplete();
+	}, 1100);
 }
 
 
